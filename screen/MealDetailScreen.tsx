@@ -10,15 +10,25 @@ import { MEALS } from "../data/dummy-data";
 import MealDetails from "../components/MealDetails";
 import Subtitle from "../components/MealDatail/Subtitle";
 import List from "../components/MealDatail/List";
-import { useLayoutEffect, useState } from "react";
+import { useLayoutEffect } from "react";
 import IconButton from "../components/IconButton";
+import { useDispatch, useSelector } from "react-redux";
+import { addFavorite, removeFavorite } from "../store/redux/favorites";
 
 function MealDetailScreen({ route, navigation }) {
-  const { mealId } = route.params;
-  const meal = MEALS.find((meal) => meal.id === mealId);
+  const favoriteMealIds = useSelector((state: any) => state.favoriteMeals.ids);
+  const dispatch = useDispatch();
 
-  function headerButtonPressHandler() {
-    console.log("Pressed!");
+  const mealId = route.params.mealId;
+  const selectedMeal = MEALS.find((meal) => meal.id === mealId);
+  const mealIsFavorite = favoriteMealIds.includes(mealId);
+
+  function changeFavoriteStatusHandler() {
+    if (mealIsFavorite) {
+      dispatch(removeFavorite({ id: mealId }));
+    } else {
+      dispatch(addFavorite({ id: mealId }));
+    }
   }
 
   useLayoutEffect(() => {
@@ -26,31 +36,39 @@ function MealDetailScreen({ route, navigation }) {
       headerRight: () => {
         return (
           <IconButton
-            icon="star"
+            icon={mealIsFavorite ? "star" : "star-outline"}
             color="white"
-            onPress={headerButtonPressHandler}
+            onPress={changeFavoriteStatusHandler}
           />
         );
       },
     });
-  }, [navigation, headerButtonPressHandler]);
+  }, [navigation, changeFavoriteStatusHandler, mealIsFavorite]);
+
+  if (!selectedMeal) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <Text style={{ color: "white", fontSize: 18 }}>Meal not found.</Text>
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.rootContainer}>
-      <Image style={styles.image} source={{ uri: meal.imageUrl }} />
-      <Text style={styles.title}>{meal.title}</Text>
+      <Image style={styles.image} source={{ uri: selectedMeal.imageUrl }} />
+      <Text style={styles.title}>{selectedMeal.title}</Text>
       <MealDetails
-        duration={meal.duration}
-        complexity={meal.complexity}
-        affordability={meal.affordability}
+        duration={selectedMeal.duration}
+        complexity={selectedMeal.complexity}
+        affordability={selectedMeal.affordability}
         textStyle={styles.detailText}
       />
       <View style={styles.listOuterContainer}>
         <View style={styles.listContainer}>
           <Subtitle>Ingredients</Subtitle>
-          <List data={meal.ingredients} />
+          <List data={selectedMeal.ingredients} />
           <Subtitle>Steps</Subtitle>
-          <List data={meal.steps} />
+          <List data={selectedMeal.steps} />
         </View>
       </View>
     </ScrollView>
